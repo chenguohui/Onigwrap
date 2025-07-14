@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  ONIGURUMA_REF: v6.9.10
+  ONIGURUMA_REF: v6.9.10+loong
 
 jobs:
   build:
@@ -29,6 +29,11 @@ jobs:
             host: aarch64-linux-gnu
             libname: libonigwrap.so
             script: generic
+          - name: Linux loongarch64
+            os: ubuntu-22.04
+            host: loongarch64-linux-gnu
+            libname: libonigwrap.so
+            script: loongarch64
             # Linux musl
           - name: Linux x86_64 musl
             os: ubuntu-22.04
@@ -134,7 +139,7 @@ jobs:
       - name: Checkout oniguruma
         uses: actions/checkout@v4
         with:
-          repository: kkos/oniguruma
+          repository: chenguohui/oniguruma
           ref: ${{ env.ONIGURUMA_REF }}
           path: oniguruma
       - name: Checkout emsdk
@@ -164,6 +169,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install gcc-aarch64-linux-gnu
+      - name: Configure loongarch64 packages
+        if: ${{ startsWith(matrix.host, 'loongarch64-linux-') }}
+        run: |
+          curl -LO --fail https://ftp.loongnix.cn/toolchain/gcc/release/loongarch/gcc8/loongson-gnu-toolchain-8.3-x86_64-loongarch64-linux-gnu-rc1.6.tar.xz
+          tar xf loongson-gnu-toolchain-8.3-x86_64-loongarch64-linux-gnu-rc1.6.tar.xz
       - name: Install Android NDK
         if: ${{ contains(matrix.host, '-android') }}
         run: |
@@ -217,6 +227,7 @@ jobs:
         run: |
           install -D artifacts/x86_64-linux-gnu.libonigwrap.so/libonigwrap.so -t runtimes/linux-x64/native
           install -D artifacts/aarch64-linux-gnu.libonigwrap.so/libonigwrap.so -t runtimes/linux-arm64/native
+          install -D artifacts/loongarch64-linux-gnu.libonigwrap.so/libonigwrap.so -t runtimes/linux-loongarch64/native
           install -D artifacts/x86_64-linux-musl.libonigwrap.so/libonigwrap.so -t runtimes/linux-musl-x64/native
           install -D artifacts/aarch64-linux-musl.libonigwrap.so/libonigwrap.so -t runtimes/linux-musl-arm64/native
           install -D artifacts/x86_64-linux-android30.libonigwrap.so/libonigwrap.so -t runtimes/linux-bionic-x64/native

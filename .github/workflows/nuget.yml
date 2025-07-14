@@ -4,6 +4,17 @@ on:
   push:
     tags:
       - v*
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Publish version'
+        required: true
+        type: string
+        default: 1.0.8
+      release:
+        description: 'publish release'
+        type: boolean
+        default: true
 
 jobs:
   build_and_test:
@@ -33,15 +44,16 @@ jobs:
       - name: Restore project
         run: dotnet restore
       - name: Build
-        run: dotnet build -c Release -p:Version="${{ steps.version.outputs.version }}" --no-restore
+        run: dotnet build -c Release -p:Version="${{ inputs.version }}" --no-restore
       - name: Test
-        run: dotnet test -c Release -p:Version="${{ steps.version.outputs.version }}" --no-restore --no-build --verbosity normal
+        run: dotnet test -c Release -p:Version="${{ inputs.version }}" --no-restore --no-build --verbosity normal
       - name: Pack
-        run: dotnet pack -c Release -p:Version="${{ steps.version.outputs.version }}" -o . --no-restore --no-build
+        run: dotnet pack -c Release -p:Version="${{ inputs.version }}" -o . --no-restore --no-build
       - name: Publish
-        run: dotnet nuget push "Onigwrap.${{ steps.version.outputs.version }}.nupkg" -k "${{ secrets.NUGET_API_KEY }}" -s https://api.nuget.org/v3/index.json
+        run: dotnet nuget push "Onigwrap.${{ inputs.version }}.nupkg" -k "${{ secrets.NUGET_API_KEY }}" -s https://nuget.loongnix.cn/v3/index.json
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Onigwrap.${{ steps.version.outputs.version }}
-          path: Onigwrap.${{ steps.version.outputs.version }}.nupkg
+          name: Onigwrap.${{ inputs.version }}
+          path: Onigwrap.${{ inputs.version }}.nupkg
