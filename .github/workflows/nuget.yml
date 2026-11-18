@@ -33,10 +33,14 @@ jobs:
           INPUT_VERSION: ${{ inputs.version }}
         run: |
           if [[ -n "$INPUT_VERSION" ]]; then
-            echo "version=$INPUT_VERSION" >> "$GITHUB_OUTPUT"
+            VERSION="$INPUT_VERSION"
           else
-            echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+            VERSION="${TAG#v}"
           fi
+          # The LoongArch release tags carry a -loongarch64 suffix, but the
+          # package itself uses the plain upstream version (e.g. 1.0.10).
+          VERSION="${VERSION%-loongarch64}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
