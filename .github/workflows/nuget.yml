@@ -55,8 +55,23 @@ jobs:
       - name: Pack
         run: dotnet pack -c Release -p:Version="${{ steps.version.outputs.version }}" -o . --no-restore --no-build
       - name: Publish
-        run: dotnet nuget push "Onigwrap.${{ steps.version.outputs.version }}.nupkg" -k "${{ secrets.NUGET_API_KEY }}" -s https://nuget.loongnix.cn/v3/index.json
-
+        run: dotnet nuget push "Onigwrap.${{ steps.version.outputs.version }}.nupkg" -k "${{ secrets.NUGET_API_KEY }}" -s loongnix --configfile ci/nuget.loongnix.config
+      - name: Verify package on feed
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          ID="onigwrap"
+          VER="${VERSION,,}"
+          for attempt in $(seq 1 10); do
+            if curl -fsI "https://nuget.loongnix.cn/v3/package/${ID}/${VER}/${ID}.${VER}.nupkg" > /dev/null; then
+              echo "Package ${VER} is available on the feed."
+              exit 0
+            fi
+            echo "Package ${VER} not visible yet (attempt ${attempt}/10), retrying..."
+            sleep 3
+          done
+          echo "Package ${VER} was not found on the feed." >&2
+          exit 1
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
